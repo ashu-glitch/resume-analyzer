@@ -12,9 +12,7 @@ An NLP-based tool that compares a resume with a job description and tells you ho
 
 
 
-\*\*Scoring:\*\* Overall match = 60% skill match + 40% text similarity (TF-IDF).
-
-
+\*\*Scoring:\*\* Overall match = 50% skill match + 30% semantic match (Sentence-BERT) + 20% keyword match (TF-IDF).
 
 \## Features
 
@@ -46,13 +44,13 @@ An NLP-based tool that compares a resume with a job description and tells you ho
 
 \## Tech Stack
 
-Python, pdfplumber, scikit-learn, Streamlit
+Python, pdfplumber, scikit-learn, Sentence-Transformers, Streamlit
 
 
 
 \## Status
 
-Working prototype. Next: semantic matching with Sentence-BERT and online deployment.
+Working prototype. Next: online deployment.
 
 
 

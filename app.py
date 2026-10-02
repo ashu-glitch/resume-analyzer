@@ -1,7 +1,7 @@
 import streamlit as st
 
 from src.parser import extract_text_from_pdf, clean_text
-from src.matcher import tfidf_score
+from src.matcher import tfidf_score, semantic_score
 from src.skills import load_skills, compare_skills
 
 st.set_page_config(page_title="AI Resume Analyzer", page_icon="📄", layout="centered")
@@ -24,23 +24,43 @@ if st.button("Analyze", type="primary"):
                 "It may be a scanned image. Try a PDF exported from Word or Google Docs."
             )
         else:
-            resume = clean_text(raw_text)
-            job = clean_text(job_description)
+            with st.spinner("Analyzing (the first run loads the AI model)..."):
+                resume = clean_text(raw_text)
+                job = clean_text(job_description)
 
-            skills = load_skills()
-            matched, missing, resume_skills = compare_skills(resume, job, skills)
+                skills = load_skills()
+                matched, missing, resume_skills = compare_skills(resume, job, skills)
 
-            text_score = tfidf_score(resume, job)
+                keyword_score = tfidf_score(resume, job)
+                meaning_score = semantic_score(raw_text, job_description)
+
             total_job_skills = len(matched) + len(missing)
-            skill_score = (len(matched) / total_job_skills * 100) if total_job_skills else 0
-            final_score = round(0.4 * text_score + 0.6 * skill_score, 1)
+            if total_job_skills:
+                skill_score = len(matched) / total_job_skills * 100
+                final_score = round(
+                    0.5 * skill_score + 0.3 * meaning_score + 0.2 * keyword_score, 1
+                )
+            else:
+                skill_score = None
+                final_score = round(0.6 * meaning_score + 0.4 * keyword_score, 1)
 
             st.subheader("Results")
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Overall match", f"{final_score}%")
-            col2.metric("Skill match", f"{round(skill_score, 1)}%")
-            col3.metric("Text similarity", f"{text_score}%")
+            st.metric("Overall match", f"{final_score}%")
             st.progress(min(int(final_score), 100))
+
+            c1, c2, c3 = st.columns(3)
+            c1.metric(
+                "Skill match",
+                f"{round(skill_score, 1)}%" if skill_score is not None else "n/a",
+            )
+            c2.metric("Semantic match", f"{meaning_score}%")
+            c3.metric("Keyword match", f"{keyword_score}%")
+
+            if skill_score is None:
+                st.caption(
+                    "No known skills were found in this job description, "
+                    "so the overall score uses only semantic and keyword matching."
+                )
 
             left, right = st.columns(2)
             with left:
