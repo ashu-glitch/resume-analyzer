@@ -6,6 +6,16 @@ An NLP-based tool that compares a resume with a job description and tells you ho
 
 
 
+\## Demo
+
+!\[App screenshot](docs/screenshot.png)
+
+
+
+\*\*Scoring:\*\* Overall match = 60% skill match + 40% text similarity (TF-IDF).
+
+
+
 \## Features
 
 \- Upload a resume in PDF format
@@ -42,7 +52,7 @@ Python, pdfplumber, scikit-learn, Streamlit
 
 \## Status
 
-Work in progress. Currently building the core matching engine.
+Working prototype. Next: semantic matching with Sentence-BERT and online deployment.
 
 
 

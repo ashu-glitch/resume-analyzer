@@ -1,0 +1,67 @@
+import streamlit as st
+
+from src.parser import extract_text_from_pdf, clean_text
+from src.matcher import tfidf_score
+from src.skills import load_skills, compare_skills
+
+st.set_page_config(page_title="AI Resume Analyzer", page_icon="📄", layout="centered")
+
+st.title("📄 AI Resume Analyzer & Job Matcher")
+st.write("Upload your resume and paste a job description to see how well they match.")
+
+uploaded = st.file_uploader("Upload your resume (PDF)", type=["pdf"])
+job_description = st.text_area("Paste the job description here", height=220)
+
+if st.button("Analyze", type="primary"):
+    if uploaded is None or not job_description.strip():
+        st.warning("Please upload a resume and paste a job description.")
+    else:
+        raw_text = extract_text_from_pdf(uploaded)
+
+        if not raw_text.strip():
+            st.error(
+                "Could not read any text from this PDF. "
+                "It may be a scanned image. Try a PDF exported from Word or Google Docs."
+            )
+        else:
+            resume = clean_text(raw_text)
+            job = clean_text(job_description)
+
+            skills = load_skills()
+            matched, missing, resume_skills = compare_skills(resume, job, skills)
+
+            text_score = tfidf_score(resume, job)
+            total_job_skills = len(matched) + len(missing)
+            skill_score = (len(matched) / total_job_skills * 100) if total_job_skills else 0
+            final_score = round(0.4 * text_score + 0.6 * skill_score, 1)
+
+            st.subheader("Results")
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Overall match", f"{final_score}%")
+            col2.metric("Skill match", f"{round(skill_score, 1)}%")
+            col3.metric("Text similarity", f"{text_score}%")
+            st.progress(min(int(final_score), 100))
+
+            left, right = st.columns(2)
+            with left:
+                st.markdown("### ✅ Matched skills")
+                if matched:
+                    for s in matched:
+                        st.write(f"- {s}")
+                else:
+                    st.write("No matching skills found.")
+            with right:
+                st.markdown("### ❌ Missing skills")
+                if missing:
+                    for s in missing:
+                        st.write(f"- {s}")
+                else:
+                    st.write("You cover every skill the job asks for.")
+
+            if missing:
+                st.markdown("### 💡 Suggestions")
+                st.info(
+                    "Add these skills to your resume (only if you actually have them), "
+                    "ideally inside a project or experience bullet: "
+                    + ", ".join(missing)
+                )
